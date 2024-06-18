@@ -2,7 +2,6 @@ import torch
 from torch import nn
 from torch import distributions
 from torch.nn.parameter import Parameter
-from EI_calculation import approx_ei
 
 class Simple_Spring_Model():
     
