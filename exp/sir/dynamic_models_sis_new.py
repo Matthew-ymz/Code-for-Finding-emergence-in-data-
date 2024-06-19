@@ -2,6 +2,8 @@ import torch
 from torch import nn
 from torch import distributions
 from torch.nn.parameter import Parameter
+use_cuda = torch.cuda.is_available()
+device = torch.device('cuda:0') if use_cuda else torch.device('cpu')
 
 class Simple_Spring_Model():
     
@@ -9,14 +11,14 @@ class Simple_Spring_Model():
         self.device = device
         self.R = R
     
-    def one_step(self, x, v, dt=0.1):
+    def one_step(self, x, v, dt=0.01):
         r = (x*x + v*v) ** 0.5
         r -= (r - self.R) * dt / 12.56
         t = torch.atan2(v, x) + dt
         x_, v_ = r * torch.cos(t), r * torch.sin(t)
         return x_, v_
     
-    def multi_steps_sir(self, s, steps, sigma,lam=1,miu=0.5,rou=-1,dt=1,interval=1): 
+    def multi_steps_sir(self, s, steps, sigma,lam=1,miu=0.5,rou=-0.5,dt=0.01,interval=1): 
         #One sample point runs multiple time steps.
         batch_size = s.size()[0]
         s_hist = s
@@ -45,7 +47,7 @@ class Simple_Spring_Model():
     
    
     
-    def generate_onestep(self,s,i,r,lam,miu, sigma,rou=-1):
+    def generate_onestep(self,s,i,r,lam,miu, sigma,rou=-0.5):
         splus, iplus,rplus = self.SIR_step(s,i,r,lam,miu)
         s_p = self.perturb(torch.cat((s,i,r), 1), sigma,rou)
         splus_p = self.perturb(torch.cat((splus, iplus,rplus), 1), sigma,rou)
@@ -70,7 +72,7 @@ class Simple_Spring_Model():
         return s,i
 
   
-    def generate_multistep_sir(self,size_list,steps,lam=1,miu=0.5,sigma=1,rou=-1,dt=1,noise2=0,interval=1):
+    def generate_multistep_sir(self,size_list,steps,lam=1,miu=0.5,sigma=0.03,rou=-0.5,dt=0.01,noise2=0,interval=1):
         #Be able to build a sample set with missing values.
         s=torch.tensor([0],device=self.device)
         i=torch.tensor([0],device=self.device)
@@ -109,5 +111,28 @@ class Simple_Spring_Model():
                 history = torch.cat((history, sir),0)
                 observ_hist = torch.cat((observ_hist, sir_p),0)
         return observ_hist[:-size,:],observ_hist[size:,:], history[:-size,:],history[size:,:]
-    
+
+def calculate_multistep_predict(model,s,i,steps = 10,stochastic=False,sigma=0.03,rou=-0.5,dt=0.01):
+    #Out-of-distribution generalization testing function
+    spring = Simple_Spring_Model(device=device)
+
+    if stochastic:
+        z = torch.randn([1, 2], device=device)*L/2 
+    else:
+        z=torch.tensor([[s,i]],device=device) 
+    s = spring.perturb(z, sigma,rou)
+
+    s_hist, z_hist = model.multi_step_prediction(s, steps)
+    if use_cuda:
+        s_hist = s_hist.cpu()
+        z_hist = z_hist.cpu()
+
+    rs_hist, rsn_hist = spring.multi_steps_sir(z, steps, sigma,rou=rou,dt=dt) #sir
+    if use_cuda:
+        rs_hist = rs_hist.cpu()
+        rsn_hist = rsn_hist.cpu()
+
+    means=torch.mean(torch.abs(rsn_hist-s_hist[1:,:]))
+    #cums=torch.cumsum(means, 0)[-1] / steps
+    return means.item()
     

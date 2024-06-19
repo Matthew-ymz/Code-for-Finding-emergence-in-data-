@@ -3,11 +3,10 @@ import torch
 from torch import nn
 from torch.autograd.functional import jacobian
 from sklearn.neighbors import KernelDensity
-# TODO:decouple dynamics from ei module
-from exp.sir.dynamic_models_sis_new import Simple_Spring_Model
+
 use_cuda = torch.cuda.is_available()
 device = torch.device('cuda:0') if use_cuda else torch.device('cpu')
-spring = Simple_Spring_Model(device=device)
+
 
 def kde_density(X):
     kde = KernelDensity(kernel='gaussian', bandwidth=0.05, atol=0.2).fit(X.cpu().data.numpy()) #bindwidth=0.02
@@ -121,26 +120,3 @@ def test_model_causal_multi_sis(spring_data,MAE_raw,net1,sigma,scale,L=0.5, num_
 
     return ei, sigmas,weights
 
-def calculate_multistep_predict(model,s,i,steps = 100,stochastic=False,sigma=0.03,rou=-0.5,dt=0.01):
-    #Out-of-distribution generalization testing function
-    spring = Simple_Spring_Model(device=device)
-
-    if stochastic:
-        z = torch.randn([1, 2], device=device)*L/2 
-    else:
-        z=torch.tensor([[s,i]],device=device) 
-    s = spring.perturb(z, sigma,rou)
-
-    s_hist, z_hist = model.multi_step_prediction(s, steps)
-    if use_cuda:
-        s_hist = s_hist.cpu()
-        z_hist = z_hist.cpu()
-
-    rs_hist, rsn_hist = spring.multi_steps_sir(z, steps, sigma,rou=rou,dt=dt) #sir
-    if use_cuda:
-        rs_hist = rs_hist.cpu()
-        rsn_hist = rsn_hist.cpu()
-
-    means=torch.mean(torch.abs(rsn_hist-s_hist[1:,:]),1)
-    cums=torch.cumsum(means, 0) / steps
-    return cums
