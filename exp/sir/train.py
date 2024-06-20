@@ -182,4 +182,4 @@ def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_inter
             MAEs_mstep.append(mae_mstep) 
             cpt('o_1')
             
-    return eis, term1s, term2s, losses, MAEs_mstep
+    return eis, term1s, term2s, losses, MAEs_mstep, net
