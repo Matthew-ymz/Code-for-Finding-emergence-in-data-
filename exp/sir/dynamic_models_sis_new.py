@@ -11,18 +11,12 @@ class Simple_Spring_Model():
         self.device = device
         self.R = R
     
-    def one_step(self, x, v, dt=0.01):
-        r = (x*x + v*v) ** 0.5
-        r -= (r - self.R) * dt / 12.56
-        t = torch.atan2(v, x) + dt
-        x_, v_ = r * torch.cos(t), r * torch.sin(t)
-        return x_, v_
     
     def multi_steps_sir(self, s, steps, sigma,lam=1,miu=0.5,rou=-0.5,dt=0.01,interval=1): 
         #One sample point runs multiple time steps.
         batch_size = s.size()[0]
         s_hist = s
-        sn_hist = self.perturb(s, 0.001,rou)
+        sn_hist = self.perturb(s, 0, rou)
         for t in range(1,steps+1):
             s_next,i_next = self.SIR_step(s[:,0],s[:,1],lam,miu,dt=dt)
             #s_next = torch.Tensor(s_next).unsqueeze(0)
@@ -35,9 +29,9 @@ class Simple_Spring_Model():
         return s_hist[batch_size:,:], sn_hist[batch_size:,:]
     
     def perturb(self, s, sigma,rou):
-        prior = distributions.MultivariateNormal(torch.zeros(2,device=self.device), torch.tensor([[1,rou],[rou,1]],device=self.device)*sigma*sigma)
-        rand1=prior.sample([s.size()[0]])
-        rand2=prior.sample([s.size()[0]])
+        prior = distributions.MultivariateNormal(torch.zeros(2,device=self.device), torch.tensor([[1,rou],[rou,1]],device=self.device))
+        rand1=prior.sample([s.size()[0]])*sigma
+        rand2=prior.sample([s.size()[0]])*sigma
         s1 = s[:,0].unsqueeze(1) + rand1
         s2 = s[:,1].unsqueeze(1) + rand2
         s1_= torch.cat((s1[:,[0]], s2[:,[0]]), 1)
@@ -45,15 +39,8 @@ class Simple_Spring_Model():
         sr = torch.cat((s1_, s2_), 1)
         return sr
     
-   
     
-    def generate_onestep(self,s,i,r,lam,miu, sigma,rou=-0.5):
-        splus, iplus,rplus = self.SIR_step(s,i,r,lam,miu)
-        s_p = self.perturb(torch.cat((s,i,r), 1), sigma,rou)
-        splus_p = self.perturb(torch.cat((splus, iplus,rplus), 1), sigma,rou)
-        return s_p, splus_p, torch.cat((s,i,r),1),torch.cat((splus,iplus,rplus),1)
-    
-    def SIR_step(self,s,i,lam,miu,noise2=0,dt=1):
+    def SIR_step(self,s,i,lam,miu,noise2=0,dt=0.01):
         
         if noise2==0:
             s=s-dt* lam * s * i
@@ -127,7 +114,7 @@ def calculate_multistep_predict(model,s,i,steps = 10,stochastic=False,sigma=0.03
         s_hist = s_hist.cpu()
         z_hist = z_hist.cpu()
 
-    rs_hist, rsn_hist = spring.multi_steps_sir(z, steps, sigma,rou=rou,dt=dt) #sir
+    rs_hist, rsn_hist = spring.multi_steps_sir(z, steps, sigma,rou=rou,dt=dt) 
     if use_cuda:
         rs_hist = rs_hist.cpu()
         rsn_hist = rsn_hist.cpu()

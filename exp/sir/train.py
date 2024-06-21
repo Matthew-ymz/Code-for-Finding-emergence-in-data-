@@ -27,7 +27,7 @@ def cpt(s):
     t0 = t
 
 
-def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_interval = 1000, temperature=1, m_step = 10, test_start = 0, test_end = 0.3, sigma=0.03, rou=-0.5, L=1, hidden_units = 64, batch_size = 700, framework = 'nis'):
+def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_interval = 1000, temperature=1, m_step = 10, test_start = 0, test_end = 0.3, sigma=0.03, rou=-0.5, dt=0.01, L=1, hidden_units = 64, batch_size = 700, framework = 'nis'):
     MAE = torch.nn.L1Loss()
     MAE_raw = torch.nn.L1Loss(reduction='none')
     ss,sps,ls,lps = train_data
@@ -97,7 +97,7 @@ def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_inter
             for s in np.linspace(test_start,test_end,20):
                 s=float(s)
                 i=(1-s)/2 #sir
-                mae_mstep += calculate_multistep_predict(net,s,i,steps=m_step, sigma=sigma, rou=rou)
+                mae_mstep += calculate_multistep_predict(net,s,i,steps=m_step, sigma=sigma, rou=rou, dt=dt)
             mae_mstep /= 20
             ei1, sigmas1,weightsnn = test_model_causal_multi_sis(test_data,MAE_raw,net,sigma,scale, L=L,num_samples = 1000)
             print('Train loss: %.4f' %  loss.item())
@@ -165,7 +165,7 @@ def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_inter
             for s in np.linspace(test_start,test_end,20):
                 s=float(s)
                 i=(1-s)/2 #sir
-                mae_mstep += calculate_multistep_predict(net,s,i,steps=m_step,sigma=sigma, rou=rou)
+                mae_mstep += calculate_multistep_predict(net,s,i,steps=m_step,sigma=sigma, rou=rou, dt=dt)
             mae_mstep /= 20
             ei1, sigmas1,weightsnn = test_model_causal_multi_sis(test_data,MAE_raw,net,sigma,scale, L=L,num_samples = 1000)
             print('Train loss: %.4f' %  loss.item())
