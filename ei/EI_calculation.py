@@ -112,7 +112,10 @@ def test_model_causal_multi_sis(spring_data,MAE_raw,net1,sigma,scale,L=0.5, num_
     if use_cuda:
         weights = weights.cuda(device=device)
     weights=weights.unsqueeze(1)
-    mae1 = MAE_raw(latentp1, encode) * torch.cat((weights,weights),1)
+    weights_ = weights
+    for k in range(scale-1):
+        weights_ = torch.cat((weights_,weights),1)
+    mae1 = MAE_raw(latentp1, encode) * weights_
     sigmas=mae1.mean(axis=0)
     sigmas_matrix = torch.diag(sigmas)
     ei = approx_ei(scale, scale, sigmas_matrix.data, lambda x:(net1.dynamics(x.unsqueeze(0))+x.unsqueeze(0)), 
