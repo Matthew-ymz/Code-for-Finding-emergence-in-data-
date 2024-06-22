@@ -20,7 +20,7 @@ ei: The function files used for calculating effective information and mutual inf
 
 exp: The running code for the four experiments presented in the article. <br>
 
-models: The core code modules of the neural network. <br>
+models(models_new.py): The core code modules of the neural network. <br>
 
 resources: The image files. <br>
 

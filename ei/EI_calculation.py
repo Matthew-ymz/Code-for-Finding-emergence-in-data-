@@ -3,6 +3,7 @@ import torch
 from torch import nn
 from torch.autograd.functional import jacobian
 from sklearn.neighbors import KernelDensity
+import ei.entropy_estimators as ee
 
 use_cuda = torch.cuda.is_available()
 device = torch.device('cuda:0') if use_cuda else torch.device('cpu')
@@ -123,3 +124,51 @@ def test_model_causal_multi_sis(spring_data,MAE_raw,net1,sigma,scale,L=0.5, num_
 
     return ei, sigmas,weights
 
+def EmergencePsi(X, V, tau=1, method=None):
+    """
+    Compute causal emergence criterion from data
+    
+    Args:
+    - X: Micro time series data of shape (T, D)
+    - V: Macro time series data of shape (T, R)
+    - tau: Time delay (default: 1)
+    - method: Estimation method for mutual information ('discrete' or 'gaussian') (default: None)
+    
+    Returns:
+    - psi: Causal emergence criterion
+    - v_mi: Mutual information in macro variables
+    - x_mi: Mutual information in micro variables
+    """
+    
+    # Parameter checks and initialisation
+    if X.ndim != 2 or V.ndim != 2:
+        raise ValueError("X and V have to be 2D matrices.")
+    if X.shape[0] != V.shape[0]:
+        raise ValueError("X and V must have the same height.")
+    if tau is None:
+        tau = 1
+    if method is None:
+        isdiscrete = np.isclose(X, np.round(X)).all() and np.isclose(V, np.round(V)).all()
+        if isdiscrete:
+            method = 'discrete'
+        else:
+            method = 'gaussian'
+    
+    if method.lower() == 'gaussian':
+        MI_fun = ee.mi#GaussianMI
+    elif method.lower() == 'discrete':
+        MI_fun = ee.midd#DiscreteMI
+    else:
+        raise ValueError("Unknown method. Implemented options are 'gaussian' and 'discrete'.")
+    
+    # Compute mutual infos and psi
+    v_mi = MI_fun(V[:-tau, :], V[tau:, :])
+    x_mi = sum([MI_fun(np.array([X[:-tau, j]]).T, V[tau:, :]) for j in range(X.shape[1])])
+    psi = v_mi - x_mi
+    
+    if len(X.shape) < 2:
+        x_mi = None
+    if len(V.shape) < 2:
+        v_mi = None
+    
+    return psi, v_mi, x_mi
