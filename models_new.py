@@ -188,4 +188,67 @@ class Renorm_Dynamic(nn.Module):
             z = z_next
         return s_hist, z_hist
         
+class VAE(nn.Module):
+    def __init__(self, input_dim, hidden_dim1, hidden_dim2,latent_dim):
+        super(VAE, self).__init__()
+        self.encoder = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim1),
+            nn.ReLU(),
+            nn.Linear(hidden_dim1, hidden_dim2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim2, hidden_dim2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim2, hidden_dim2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim2, latent_dim * 2)  # 输出均值和方差
+        )
+        self.decoder = nn.Sequential(
+            nn.Linear(latent_dim, hidden_dim2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim2, hidden_dim2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim2, hidden_dim2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim2, hidden_dim1),
+            nn.ReLU(),
+            nn.Linear(hidden_dim1, input_dim),
+            nn.Sigmoid()  # 输出范围在0到1之间
+        )
+        self.dynamics=nn.Sequential(nn.Linear(latent_dim, hidden_dim2), nn.LeakyReLU(), 
+                                 nn.Linear(hidden_dim2, hidden_dim2), nn.LeakyReLU(), 
+                                 nn.Linear(hidden_dim2, latent_dim))
+        self.inverse_dynamics=nn.Sequential(nn.Linear(latent_dim, hidden_dim2), nn.LeakyReLU(), 
+                                 nn.Linear(hidden_dim2, hidden_dim2), nn.LeakyReLU(), 
+                                 nn.Linear(hidden_dim2, latent_dim))
+        
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.1 * logvar)
+        eps = torch.randn_like(std)
+        z = mu + 0.0001*eps * std
+        return z
+
+    def forward(self, x,steps=1):
+        x = x.view(x.size(0), -1)
+        latent_params = self.encoder(x)
+        mu, logvar = torch.chunk(latent_params, 2, dim=1)
+        for step in range(steps):
+            mu=mu+self.dynamics(mu)
+        z = self.reparameterize(mu, logvar)
+        reconstructed_x = self.decoder(z)
+        return reconstructed_x, mu, logvar
+        
+    def multi_step_prediction(self, x,steps=10):
+        x = x.view(x.size(0), -1)
+        latent_params = self.encoder(x)
+        mu, logvar = torch.chunk(latent_params, 2, dim=1)
+        x_list=x#torch.zeros([x.size(0),steps])
+        mu_list=mu
+        for step in range(steps):
+            mu=mu+self.dynamics(mu)
+            z = self.reparameterize(mu, logvar)
+            reconstructed_x = self.decoder(z)
+            x_list= torch.cat((x_list,reconstructed_x),0)
+            mu_list= torch.cat((mu_list,mu),0)
+        return x_list, mu_list
+    
 

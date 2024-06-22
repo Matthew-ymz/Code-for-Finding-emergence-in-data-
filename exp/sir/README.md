@@ -11,6 +11,7 @@ SIR simple example: The case code for training the NIS and NIS+ frameworks using
 SIR EI and multistepmae: Repeated experiments for calculating EI and out-of-distribution generalization in multistep forecasting. <br>
 SIR vector field: A comparison of the vector fields in phase space for NIS and NIS+.<br>
 SIR noise changes: Experiments calculating the variations in EI and CE under different noise levels. <br>
+SIR VAE: Experiments training VAE models. <br>
 train.py: The function used for training.<br>
 dynamic_models_sis_new.py: The function file for generating SIR data.<br>
 vector_field.py: The functions used for plotting vector fields.<br>

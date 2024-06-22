@@ -122,4 +122,3 @@ def calculate_multistep_predict(model,s,i,steps = 10,stochastic=False,sigma=0.03
     means=torch.mean(torch.abs(rsn_hist-s_hist[1:,:]))
     #cums=torch.cumsum(means, 0)[-1] / steps
     return means.item()
-    
