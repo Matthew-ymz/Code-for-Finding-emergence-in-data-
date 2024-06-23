@@ -4,6 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import random
+import torch
+from dynamic_models_sis_new import Simple_Spring_Model
+use_cuda = torch.cuda.is_available()
+device = torch.device('cuda:0') if use_cuda else torch.device('cpu')
 
 def mesh(density):
     p1 = np.array([0, 0])
@@ -46,7 +50,6 @@ def transit(ss,sps,density):
     h1=np.arange(xmin.cpu().detach().numpy(), xmax.cpu().detach().numpy(), density)
     h2=np.arange(ymin.cpu().detach().numpy(), ymax.cpu().detach().numpy(), density)
    
-    cpt('start')
     for i in range(numberx):
         for j in range(numbery):
             ss0=(ss[:,0] >= xmin + i*density) & (ss[:,0] < xmin + (i+1)*density) & (ss[:,1] >= ymin + j*density) & (ss[:,1] < ymin + (j+1)*density)
@@ -75,7 +78,13 @@ def transit(ss,sps,density):
 
     return count_mean,h1,h2
 
-def vector_func(net,jac_bool=True,density=0.06,density2=0.02,density3=0.08):
+def SIR(s,i,lam=1,miu=0.5):
+    ds=-lam * s * i
+    di=lam * s * i - miu * i
+    return ds, di
+    
+def vector_func(net,sigma=0.03,rou=-0.5,jac_bool=True,density=0.07,density2=0.015,density3=0.07):
+    colorlabel = ['#F4F1DE','#DF7A5E','#3C405B','#82B29A','#F2CC8E']
     S, I = mesh(density)
     plt.figure()
     plt.scatter(S,I,color=colorlabel[2])
@@ -108,9 +117,9 @@ def vector_func(net,jac_bool=True,density=0.06,density2=0.02,density3=0.08):
         plt.figure()
         plt.scatter(SI[:,0].cpu().detach().numpy(),SI[:,1].cpu().detach().numpy(),color=colorlabel[2])
         plt.xticks([i/100 for i in range(44, 58, 2)])
-        # 设置y轴的刻度
+
         plt.yticks([i/100 for i in range(25, 42, 2)])
-        # 绘制水平的栅格线
+
         plt.grid(True, which='major', axis='both', linestyle='-', linewidth=1, color=colorlabel[4])
 
         SI2=torch.tensor([S2,I2],dtype=torch.float,device=device)
