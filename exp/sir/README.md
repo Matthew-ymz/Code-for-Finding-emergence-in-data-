@@ -17,7 +17,7 @@ dynamic_models_sis_new.py: The function file for generating SIR data.<br>
 vector_field.py: The functions used for plotting vector fields.<br>
 mdl_data: The directory storing the trained model parameters. <br>
 resources: The image files. <br>
-
+results: The outputs of the experiments.
 
 
 
