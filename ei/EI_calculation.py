@@ -121,7 +121,6 @@ def test_model_causal_multi_sis(spring_data,MAE_raw,net1,sigma,scale,L=1, num_sa
     sigmas_matrix = torch.diag(sigmas)
     ei = approx_ei(scale, scale, sigmas_matrix.data, lambda x:(net1.dynamics(x.unsqueeze(0))+x.unsqueeze(0)), 
                        num_samples = 1000, L=L, easy=True, device=device) 
-
     return ei, sigmas,weights
 
 def EmergencePsi(X, V, tau=1, method=None):
@@ -193,5 +192,31 @@ def test_vae_causal_multi_sis(spring_data,MAE_raw,vae,sigma,scale,L=1, num_sampl
     sigmas_matrix = torch.diag(sigmas)
     ei = approx_ei(scale, scale, sigmas_matrix.data, lambda x:(vae.dynamics(x.unsqueeze(0))+x.unsqueeze(0)), 
                        num_samples = 1000, L=L, easy=True, device=device) 
-
     return ei, sigmas,weights
+
+def test_model_causal_rnis_sis(spring_data,MAE_raw,net1,sigma,scale,L=1, num_samples = 1000, temperature=1):
+    #EI calculation function
+    sigmas_matrix=torch.zeros([2,2],device=device)
+    s,sp,l,lp=spring_data
+    samples = s.size()[0]
+    encode=net1.encoding(sp)
+    predicts1, latent1, latentp1 = net1(s)
+    log_density, k_model_n = kde_density(latent1)
+    log_rho = - scale * torch.log(2.0*torch.from_numpy(np.array(L)))  #Uniform distribution probability distribution
+    logp = log_rho - log_density  #The difference between two probability distributions.
+    weights = to_weights(logp, temperature) * samples
+    if use_cuda:
+        weights = weights.cuda(device=device)
+    weights=weights.unsqueeze(1)
+    weights_ = weights
+    for k in range(scale-1):
+        weights_ = torch.cat((weights_,weights),1)
+    mae1 = MAE_raw(latentp1, encode) * weights_
+    sigmas=mae1.mean(axis=0)
+    sigmas_matrix = torch.diag(sigmas)
+    ei = approx_ei(scale, scale, sigmas_matrix.data, lambda x:(net1.dynamics.f(x.unsqueeze(0))[0]), 
+                       num_samples = 1000, L=L, easy=True, device=device) 
+    return ei, sigmas,weights
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
