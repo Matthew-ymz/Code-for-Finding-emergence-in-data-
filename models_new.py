@@ -189,7 +189,7 @@ class Renorm_Dynamic(nn.Module):
         return s_hist, z_hist
 
 class Rnis_Dynamic(nn.Module):
-    def __init__(self, sym_size, latent_size, effect_size, hidden_units,device,normalized_state=False,is_random=False):
+    def __init__(self, sym_size, latent_size, effect_size, hidden_units,hidden_units_dyn, device,normalized_state=False,is_random=False):
         #latent_size: input size
         #effect_size: scale, effective latent dynamics size
         super(Rnis_Dynamic, self).__init__()
@@ -205,10 +205,12 @@ class Rnis_Dynamic(nn.Module):
         nett_flow = lambda: nn.Sequential(nn.Linear(sym_size, hidden_units), nn.LeakyReLU(), 
                                      nn.Linear(hidden_units, hidden_units), nn.LeakyReLU(), 
                                      nn.Linear(hidden_units, sym_size))
-        nets_dyn = lambda: nn.Sequential(nn.Linear(latent_size, hidden_units), nn.LeakyReLU(), 
-                                     nn.Linear(hidden_units, latent_size), nn.Tanh())
-        nett_dyn = lambda: nn.Sequential(nn.Linear(latent_size, hidden_units), nn.LeakyReLU(), 
-                                     nn.Linear(hidden_units, latent_size))
+        nets_dyn = lambda: nn.Sequential(nn.Linear(latent_size, hidden_units_dyn), nn.LeakyReLU(), 
+                                         nn.Linear(hidden_units_dyn, hidden_units_dyn), nn.LeakyReLU(),
+                                     nn.Linear(hidden_units_dyn, latent_size), nn.Tanh())
+        nett_dyn = lambda: nn.Sequential(nn.Linear(latent_size, hidden_units_dyn), nn.LeakyReLU(), 
+                                         nn.Linear(hidden_units_dyn, hidden_units_dyn), nn.LeakyReLU(),
+                                     nn.Linear(hidden_units_dyn, latent_size))
         
         mask1 = torch.cat((torch.zeros(1, sym_size // 2, device=self.device), torch.ones(1, sym_size // 2, device=self.device)), 1)
         mask2 = 1 - mask1

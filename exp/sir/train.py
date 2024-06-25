@@ -38,8 +38,8 @@ def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_inter
     weights = torch.ones(sample_num, device=device) 
     net = Renorm_Dynamic(sym_size = sz, latent_size = scale, effect_size = sz, 
                          hidden_units = hidden_units, normalized_state=True, device = device)
-    if scale == 2:
-        net.load_state_dict(torch.load('mdl_data/netwn_init_trnorm0.1+zero_seed=4.mdl').state_dict())
+    # if scale == 2:
+    #     net.load_state_dict(torch.load('mdl_data/netwn_init_trnorm0.1+zero_seed=4.mdl').state_dict())
     net.to(device=device)
     optimizer = torch.optim.Adam([p for p in net.parameters() if p.requires_grad==True], lr=1e-4)    
     result_nn = []
@@ -197,8 +197,8 @@ def train_plus(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_
     weights = torch.ones(sample_num, device=device) 
     net = Renorm_Dynamic(sym_size = sz, latent_size = scale, effect_size = sz, 
                          hidden_units = hidden_units, normalized_state=True, device = device)
-    if scale == 2:
-        net.load_state_dict(torch.load('mdl_data/netwn_init_trnorm0.1+zero_seed=4.mdl').state_dict())
+    # if scale == 2:
+    #     net.load_state_dict(torch.load('mdl_data/netwn_init_trnorm0.1+zero_seed=4.mdl').state_dict())
     net.to(device=device)
     optimizer = torch.optim.Adam([p for p in net.parameters() if p.requires_grad==True], lr=1e-4)    
     result_nn = []

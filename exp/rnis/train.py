@@ -18,6 +18,7 @@ from ei.EI_calculation import test_model_causal_rnis_sis
 from ei.EI_calculation import test_vae_causal_multi_sis
 from ei.EI_calculation import to_weights
 from ei.EI_calculation import kde_density
+from ei.EI_calculation import count_parameters
 from dynamic_models_sis_new import Simple_Spring_Model
 from models_new import Renorm_Dynamic
 from models_new import Rnis_Dynamic
@@ -40,8 +41,8 @@ def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_inter
     weights = torch.ones(sample_num, device=device) 
     net = Renorm_Dynamic(sym_size = sz, latent_size = scale, effect_size = sz, 
                          hidden_units = hidden_units, normalized_state=True, device = device)
-    if scale == 2:
-        net.load_state_dict(torch.load('mdl_data/netwn_init_trnorm0.1+zero_seed=4.mdl').state_dict())
+    # if scale == 2:
+    #     net.load_state_dict(torch.load('mdl_data/netwn_init_trnorm0.1+zero_seed=4.mdl').state_dict())
     net.to(device=device)
     optimizer = torch.optim.Adam([p for p in net.parameters() if p.requires_grad==True], lr=1e-4)    
     result_nn = []
@@ -190,16 +191,17 @@ def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_inter
             
     return eis, term1s, term2s, losses, MAEs_mstep, net
 
-def train_rnis(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_interval = 1000, temperature=1, m_step = 10, test_start = 0, test_end = 0.3, sigma=0.03, rou=-0.5, dt=0.01, L=1, hidden_units = 64, batch_size = 700):
+def train_rnis(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_interval = 1000, temperature=1, m_step = 10, test_start = 0, test_end = 0.3, sigma=0.03, rou=-0.5, dt=0.01, L=1, hidden_units = 64, hidden_units_dyn = 64, batch_size = 700):
     MAE = torch.nn.L1Loss()
     MAE_raw = torch.nn.L1Loss(reduction='none')
     ss,sps,ls,lps = train_data
     sample_num = ss.size()[0] 
     weights = torch.ones(sample_num, device=device) 
     net = Rnis_Dynamic(sym_size = sz, latent_size = scale, effect_size = sz, 
-                         hidden_units = hidden_units, normalized_state=False, device = device)
+                         hidden_units = hidden_units, hidden_units_dyn=hidden_units_dyn, normalized_state=False, device = device)
 
     net.to(device=device)
+    print(count_parameters(net))
     optimizer = torch.optim.Adam([p for p in net.parameters() if p.requires_grad==True], lr=1e-4)    
     eis =[]
     term1s =[]
@@ -261,7 +263,7 @@ def train_rnis(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_
             cpt('w_0')
             # preparing training data
             net_temp = Rnis_Dynamic(sym_size = sz, latent_size = scale, effect_size = sz, 
-                         hidden_units = hidden_units, device = device)
+                         hidden_units = hidden_units, hidden_units_dyn=hidden_units_dyn, device = device)
             net_temp.load_state_dict(net.state_dict())
             net_temp.to(device=device)
             encodings = net_temp.encoding(ss)  
