@@ -7,7 +7,7 @@ It represents the original framework of this series[2]. In the context of multi-
 </div>
 
 # NIS+：  
-However, the NIS does not address the optimization of effective information within macro dynamics. Following the demonstration of certain mathematical theories, we have introduced an enhanced framework, denoted as NIS+, designed to identify causal emergence by maximizing the effective information. Given multivariable time series as inputs, it is capable of outputting the degree of causal emergence, the optimal coarse-graining strategy, as well as the macro-dynamics or emergent patterns. Further details can be found in reference [3]. <br>
+However, the NIS does not address the optimization of effective information within macro dynamics. Following the demonstration of certain mathematical theories, we have introduced an enhanced framework, denoted as NIS+, designed to identify causal emergence by maximizing the effective information. Given multivariable time series as inputs, it is capable of outputting the degree of causal emergence, the optimal coarse-graining strategy, as well as the macro-dynamics or emergent patterns. Further details can be found in reference[3]. <br>
 <div align=center>
 <img src="resources/NIS+.png">
 </div>
@@ -25,6 +25,7 @@ models(models_new.py): The core code modules of the neural network. <br>
 resources: The image files. <br>
 
 results: Some of the results stored from the experimental runs within the article. <br>
+
 # Reference
 [1]Yuan, B., Zhang, J., Lyu, A., Wu, J., Wang, Z., Yang, M., Liu, K., Mou, M., & Cui, P. (2024). Emergence and Causality in Complex Systems: A Survey of Causal Emergence and Related Quantitative Studies. Entropy, 26(2), 108. https://doi.org/10.3390/e26020108  <br>
 
