@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import torch.nn.init as init
 from torch import distributions
 from torch.nn.parameter import Parameter
 from sklearn.linear_model import LinearRegression
@@ -18,8 +19,8 @@ from ei.EI_calculation import test_vae_causal_multi_sis
 from ei.EI_calculation import to_weights
 from ei.EI_calculation import kde_density
 from dynamic_models_sis_new import Simple_Spring_Model
-from models_new import Renorm_Dynamic
-from models_new import VAE
+from models.models_new import Renorm_Dynamic
+from models.models_new import VAE
 from datetime import datetime
 t0 = datetime.now()
 def cpt(s):
@@ -29,6 +30,27 @@ def cpt(s):
     print(f'check point{s:->10}-> {t.time()}; lasting {t - t0} seconds')
     t0 = t
 
+def truncated_kaiming_normal_(tensor, mean=0.0, std=0.1, a=3.0, b=3.0):
+    """
+    对参数张量进行截断的Kaiming正态分布初始化。
+    
+    参数:
+    - tensor: 要初始化的参数张量。
+    - mean: 分布的均值。
+    - std: 分布的标准差。
+    - a: 截断下限，相对于均值的倍数。
+    - b: 截断上限，相对于均值的倍数。
+    """
+    # Kaiming正态分布初始化
+    init.kaiming_normal_(tensor, mode='fan_out', nonlinearity='relu')
+    
+    # 截断区间
+    lower, upper = mean - a * std, mean + b * std
+    
+    # 重新采样直到所有值都落在截断区间内
+    while torch.any(tensor < lower) or torch.any(tensor > upper):
+        init.kaiming_normal_(tensor, mode='fan_out', nonlinearity='relu')
+
 
 def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_interval = 1000, temperature=1, m_step = 10, test_start = 0, test_end = 0.3, sigma=0.03, rou=-0.5, dt=0.01, L=1, hidden_units = 64, batch_size = 700, framework = 'nis'):
     MAE = torch.nn.L1Loss()
@@ -37,9 +59,21 @@ def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_inter
     sample_num = ss.size()[0] 
     weights = torch.ones(sample_num, device=device) 
     net = Renorm_Dynamic(sym_size = sz, latent_size = scale, effect_size = sz, 
-                         hidden_units = hidden_units, normalized_state=True, device = device)
+                         hidden_units = hidden_units, normalized_state=False, device = device)
     # if scale == 2:
     #     net.load_state_dict(torch.load('mdl_data/netwn_init_trnorm0.1+zero_seed=4.mdl').state_dict())
+    # 使用自定义的截断正态分布初始化函数
+    for m in net.modules():
+        if isinstance(m, nn.Linear):
+            # Kaiming均匀分布初始化权重
+            # mode='fan_out' 表示考虑权重矩阵的输出维度
+            # nonlinearity='relu' 指定激活函数为ReLU
+            init.kaiming_uniform_(m.weight, mode='fan_out', nonlinearity='relu')
+            
+            # 偏置初始化为0
+            if m.bias is not None:
+                init.constant_(m.bias, 0)
+    
     net.to(device=device)
     optimizer = torch.optim.Adam([p for p in net.parameters() if p.requires_grad==True], lr=1e-4)    
     result_nn = []
