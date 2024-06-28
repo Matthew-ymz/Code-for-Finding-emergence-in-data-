@@ -60,19 +60,19 @@ def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_inter
     weights = torch.ones(sample_num, device=device) 
     net = Renorm_Dynamic(sym_size = sz, latent_size = scale, effect_size = sz, 
                          hidden_units = hidden_units, normalized_state=False, device = device)
-    # if scale == 2:
-    #     net.load_state_dict(torch.load('mdl_data/netwn_init_trnorm0.1+zero_seed=4.mdl').state_dict())
+    if scale == 2:
+        net.load_state_dict(torch.load('mdl_data/netwn_init_trnorm0.1+zero_seed=4.mdl').state_dict())
     # 使用自定义的截断正态分布初始化函数
-    for m in net.modules():
-        if isinstance(m, nn.Linear):
-            # Kaiming均匀分布初始化权重
-            # mode='fan_out' 表示考虑权重矩阵的输出维度
-            # nonlinearity='relu' 指定激活函数为ReLU
-            init.kaiming_uniform_(m.weight, mode='fan_out', nonlinearity='relu')
+    # for m in net.modules():
+    #     if isinstance(m, nn.Linear):
+    #         # Kaiming均匀分布初始化权重
+    #         # mode='fan_out' 表示考虑权重矩阵的输出维度
+    #         # nonlinearity='relu' 指定激活函数为ReLU
+    #         init.kaiming_uniform_(m.weight, mode='fan_out', nonlinearity='relu')
             
-            # 偏置初始化为0
-            if m.bias is not None:
-                init.constant_(m.bias, 0)
+    #         # 偏置初始化为0
+    #         if m.bias is not None:
+    #             init.constant_(m.bias, 0)
     
     net.to(device=device)
     optimizer = torch.optim.Adam([p for p in net.parameters() if p.requires_grad==True], lr=1e-4)    
