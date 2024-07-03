@@ -13,14 +13,14 @@ from torch import distributions
 from torch.nn.parameter import Parameter
 from importlib import reload
 from ei.EI_calculation import approx_ei
-from dynamic_models_sis_new import calculate_multistep_predict
+from exp.sir.dynamic_models_sis_new import calculate_multistep_predict
 from ei.EI_calculation import test_model_causal_multi_sis
 from ei.EI_calculation import test_vae_causal_multi_sis
 from ei.EI_calculation import to_weights
 from ei.EI_calculation import kde_density
-from dynamic_models_sis_new import Simple_Spring_Model
-from models.models_new import Renorm_Dynamic
-from models.models_new import VAE
+from exp.sir.dynamic_models_sis_new import Simple_Spring_Model
+from models_new import Renorm_Dynamic
+from models_new import VAE
 from datetime import datetime
 t0 = datetime.now()
 def cpt(s):
