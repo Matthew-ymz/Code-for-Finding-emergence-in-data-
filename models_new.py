@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import pytorch_lightning as pl
 from torch import distributions
 from torch.nn.parameter import Parameter
 from sklearn.linear_model import LinearRegression
@@ -48,10 +49,12 @@ class InvertibleNN(nn.Module):
             log_det_J -= s.sum(dim=1)
         return z, log_det_J
         
-class Renorm_Dynamic(nn.Module):
+class Renorm_Dynamic(pl.LightningModule):
     def __init__(self, sym_size, latent_size, effect_size, hidden_units,normalized_state,device,is_random=False):
         #latent_size: input size
         #effect_size: scale, effective latent dynamics size
+
+        # TODO: inherit; init, forward, 
         super(Renorm_Dynamic, self).__init__()
         if sym_size % 2 !=0:
             sym_size = sym_size + 1
@@ -59,6 +62,7 @@ class Renorm_Dynamic(nn.Module):
         self.latent_size = latent_size
         self.effect_size = effect_size
         self.sym_size = sym_size
+        self.loss = nn.L1Loss()
         nets = lambda: nn.Sequential(nn.Linear(sym_size, hidden_units), nn.LeakyReLU(), 
                                      nn.Linear(hidden_units, hidden_units), nn.LeakyReLU(), 
                                      nn.Linear(hidden_units, sym_size), nn.Tanh())
@@ -95,7 +99,20 @@ class Renorm_Dynamic(nn.Module):
             s_next = s_next + torch.relu(self.sigmas.repeat(s_next.size()[0],1)) * torch.randn(s_next.size(), device=self.device)
         y = self.decoding(s_next)
         return y, s, s_next
-    
+
+    def configure_optimizers():
+        optimizer = torch.optim.Adam([p for p in self.parameters() if p.requires_grad==True], lr=1e-4) 
+        return optimizer
+
+    def training_step(self, train_data, weights, batch_size):
+        ss,sps,ls,lps = train_data
+        start = np.random.randint(ss.size()[0]-batch_size)
+        end = start+batch_size
+        s,sp,l,lp, w = ss[start:end], sps[start:end], ls[start:end], lps[start:end], weights[start:end]
+        predicts, latent, latentp= self.forward(s)
+        J = self.loss(sp, predicts)
+        return J
+         
     def multi_back_forward(self, x, steps):
         batch_size = x.size()[0]
         x_hist = x
@@ -395,4 +412,4 @@ class VAE(nn.Module):
             mu_list= torch.cat((mu_list,mu),0)
         return x_list, mu_list
     
-
+   

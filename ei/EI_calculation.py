@@ -60,7 +60,7 @@ def approx_ei(input_size, output_size, sigmas_matrix, func, num_samples = 1000, 
     # term1: - Shannon Entropy
     # term2: EI+Shannon Entropy (determinant of Jacobian)
     # -np.log(rho): - ln(\rho), where \rho=(2L)^{-output_size} is the density of uniform distribution
-
+    # TODO: move jacobian to model class
     rho=1/(2*L)**input_size #the density of X even distribution
     dett=1.0
     if easy:
@@ -99,13 +99,14 @@ def approx_ei(input_size, output_size, sigmas_matrix, func, num_samples = 1000, 
     
     return d_EI, eff, EI, term1, term2, input_size * np.log(2 * L)
 
-def test_model_causal_multi_sis(spring_data,MAE_raw,net1,sigma,scale,L=1, num_samples = 1000, temperature=1):
+def test_model_causal_multi_sis(spring_data,MAE_raw,net,sigma,scale,L=1, num_samples = 1000, temperature=1): 
+    # TODO: delete, cal sigma and jobian_det in model class
     #EI calculation function
     sigmas_matrix=torch.zeros([2,2],device=device)
     s,sp,l,lp=spring_data
     samples = s.size()[0]
-    encode=net1.encoding(sp)
-    predicts1, latent1, latentp1 = net1(s)
+    encode=net.encoding(sp)
+    predicts1, latent1, latentp1 = net(s)
     log_density, k_model_n = kde_density(latent1)
     log_rho = - scale * torch.log(2.0*torch.from_numpy(np.array(L)))  #Uniform distribution probability distribution
     logp = log_rho - log_density  #The difference between two probability distributions.
@@ -172,6 +173,7 @@ def EmergencePsi(X, V, tau=1, method=None):
     return psi, v_mi, x_mi
 
 def test_vae_causal_multi_sis(spring_data,MAE_raw,vae,sigma,scale,L=1, num_samples = 1000, temperature=1):
+    # TODO: move to vae class
     #EI calculation function
     sigmas_matrix=torch.zeros([2,2],device=device)
     s,sp,l,lp=spring_data
