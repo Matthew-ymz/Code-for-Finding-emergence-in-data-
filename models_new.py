@@ -28,6 +28,7 @@ class InvertibleNN(nn.Module):
         self.t = torch.nn.ModuleList([nett() for _ in range(length)]) #repeating len(masks) times
         self.s = torch.nn.ModuleList([nets() for _ in range(length)])
         self.size = mask.size()[1]
+        
     def g(self, z):
         x = z
         log_det_J = x.new_zeros(x.shape[0], device=self.device)
