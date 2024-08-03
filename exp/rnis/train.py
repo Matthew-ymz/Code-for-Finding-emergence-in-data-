@@ -11,24 +11,14 @@ from torch import nn
 from torch import distributions
 from torch.nn.parameter import Parameter
 from importlib import reload
-# from ei.EI_calculation import approx_ei
 from dynamic_models_sis_new import calculate_multistep_predict
-# from ei.EI_calculation import test_model_causal_multi_sis
-# from ei.EI_calculation import test_model_causal_rnis_sis
-# from ei.EI_calculation import test_vae_causal_multi_sis
-# from ei.EI_calculation import to_weights
-# from ei.EI_calculation import kde_density
-# from ei.EI_calculation import count_parameters
 from dynamic_models_sis_new import Simple_Spring_Model
-# from models_new import Renorm_Dynamic
-# from models_new import Rnis_Dynamic
 from nis_net import NISNet
 from nis_net import NISPNet
 from nis_net import RNISNet
 from new_ei import EI
 from new_ei import to_weights
 from new_ei import kde_density
-# from models_new import VAE
 from datetime import datetime
 t0 = datetime.now()
 
@@ -42,6 +32,7 @@ def cpt(s):
     print(f'check point{s:->10}-> {t.time()}; lasting {t - t0} seconds')
     t0 = t
 
+        
 def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001,
             encoder_interval = 1000, temperature=1, m_step = 10,
             test_start = 0, test_end = 0.3, sigma=0.03, rou=-0.5,

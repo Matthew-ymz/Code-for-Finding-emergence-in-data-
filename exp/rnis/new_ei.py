@@ -22,7 +22,9 @@ class EI(Metric):
 
     def __init__(self):
         super().__init__()
-
+        self.dei = 0
+        self.term1 = 0
+        self.term2 = 0
         self.add_state("ei_sum", default=tensor(0.0), dist_reduce_fx="sum")
         self.add_state("ei_term1", default=tensor(0.0), dist_reduce_fx="sum")
         self.add_state("ei_term2", default=tensor(0.0), dist_reduce_fx="sum")
@@ -81,11 +83,14 @@ class EI(Metric):
         self.ei_term1 += term1
         self.ei_term2 += term2
         self.n += 1
-
-        return d_EI, term1, term2
+        
+        self.dei = d_EI
+        self.term1 = term1
+        self.term2 = term2
+        return
 
     def compute(self):
-        return self.ei_sum / self.n, self.ei_term1 / self.n, self.ei_term2 / self.n
+        return self.dei, self.term1, self.term2 #self.ei_sum / self.n, self.ei_term1 / self.n, self.ei_term2 / self.n
 
 
 if __name__ == '__main__':

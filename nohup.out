@@ -1,0 +1,81 @@
+Fail to get yarn configuration. /home/yuanbing/anaconda3/envs/py310/lib/python3.10/site-packages/jupyterlab/staging/yarn.js:4
+(()=>{var Qge=Object.create;var AS=Object.defineProperty;var bge=Object.getOwnPropertyDescriptor;var Sge=Object.getOwnPropertyNames;var vge=Object.getPrototypeOf,xge=Object.prototype.hasOwnProperty;var J=(r=>typeof require<"u"?require:typeof Proxy<"u"?new Proxy(r,{get:(e,t)=>(typeof require<"u"?require:e)[t]}):r)(function(r){if(typeof require<"u")return require.apply(this,arguments);throw new Error('Dynamic require of "'+r+'" is not supported')});var Pge=(r,e)=>()=>(r&&(e=r(r=0)),e);var w=(r,e)=>()=>(e||r((e={exports:{}}).exports,e),e.exports),ut=(r,e)=>{for(var t in e)AS(r,t,{get:e[t],enumerable:!0})},Dge=(r,e,t,i)=>{if(e&&typeof e=="object"||typeof e=="function")for(let n of Sge(e))!xge.call(r,n)&&n!==t&&AS(r,n,{get:()=>e[n],enumerable:!(i=bge(e,n))||i.enumerable});return r};var Pe=(r,e,t)=>(t=r!=null?Qge(vge(r)):{},Dge(e||!r||!r.__esModule?AS(t,"default",{value:r,enumerable:!0}):t,r));var QK=w((GXe,BK)=>{BK.expo
+
+SyntaxError: Unexpected token {
+    at createScript (vm.js:80:10)
+    at Object.runInThisContext (vm.js:139:10)
+    at Module._compile (module.js:616:28)
+    at Object.Module._extensions..js (module.js:663:10)
+    at Module.load (module.js:565:32)
+    at tryModuleLoad (module.js:505:12)
+    at Function.Module._load (module.js:497:3)
+    at Function.Module.runMain (module.js:693:10)
+    at startup (bootstrap_node.js:188:16)
+    at bootstrap_node.js:609:3
+
+[I 2024-08-03 07:05:06.541 ServerApp] jupyter_lsp | extension was successfully linked.
+[I 2024-08-03 07:05:06.545 ServerApp] jupyter_server_terminals | extension was successfully linked.
+[I 2024-08-03 07:05:06.549 ServerApp] jupyterlab | extension was successfully linked.
+[I 2024-08-03 07:05:06.742 ServerApp] notebook_shim | extension was successfully linked.
+[I 2024-08-03 07:05:06.756 ServerApp] notebook_shim | extension was successfully loaded.
+[I 2024-08-03 07:05:06.757 ServerApp] jupyter_lsp | extension was successfully loaded.
+[I 2024-08-03 07:05:06.758 ServerApp] jupyter_server_terminals | extension was successfully loaded.
+[I 2024-08-03 07:05:06.759 LabApp] JupyterLab extension loaded from /home/yuanbing/anaconda3/envs/py310/lib/python3.10/site-packages/jupyterlab
+[I 2024-08-03 07:05:06.759 LabApp] JupyterLab application directory is /home/yuanbing/anaconda3/envs/py310/share/jupyter/lab
+[I 2024-08-03 07:05:06.760 LabApp] Extension Manager is 'pypi'.
+[I 2024-08-03 07:05:06.762 ServerApp] jupyterlab | extension was successfully loaded.
+[I 2024-08-03 07:05:06.762 ServerApp] The port 8888 is already in use, trying another port.
+[I 2024-08-03 07:05:06.762 ServerApp] Serving notebooks from local directory: /home/yuanbing/data/test/ymz_nis/Code-for-Finding-emergence-in-data-
+[I 2024-08-03 07:05:06.763 ServerApp] Jupyter Server 2.13.0 is running at:
+[I 2024-08-03 07:05:06.763 ServerApp] http://zjlab-3090:8889/lab?token=0fc1b8673e08199a70f049a4ff4cc4c05bb47c25cf034488
+[I 2024-08-03 07:05:06.763 ServerApp]     http://127.0.0.1:8889/lab?token=0fc1b8673e08199a70f049a4ff4cc4c05bb47c25cf034488
+[I 2024-08-03 07:05:06.763 ServerApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 2024-08-03 07:05:06.765 ServerApp] 
+    
+    To access the server, open this file in a browser:
+        file:///home/yuanbing/.local/share/jupyter/runtime/jpserver-15335-open.html
+    Or copy and paste one of these URLs:
+        http://zjlab-3090:8889/lab?token=0fc1b8673e08199a70f049a4ff4cc4c05bb47c25cf034488
+        http://127.0.0.1:8889/lab?token=0fc1b8673e08199a70f049a4ff4cc4c05bb47c25cf034488
+[I 2024-08-03 07:05:07.453 ServerApp] Skipped non-installed server(s): bash-language-server, dockerfile-language-server-nodejs, javascript-typescript-langserver, jedi-language-server, julia-language-server, pyright, python-language-server, python-lsp-server, r-languageserver, sql-language-server, texlab, typescript-language-server, unified-language-server, vscode-css-languageserver-bin, vscode-html-languageserver-bin, vscode-json-languageserver-bin, yaml-language-server
+Fail to get yarn configuration. /home/yuanbing/anaconda3/envs/py310/lib/python3.10/site-packages/jupyterlab/staging/yarn.js:4
+(()=>{var Qge=Object.create;var AS=Object.defineProperty;var bge=Object.getOwnPropertyDescriptor;var Sge=Object.getOwnPropertyNames;var vge=Object.getPrototypeOf,xge=Object.prototype.hasOwnProperty;var J=(r=>typeof require<"u"?require:typeof Proxy<"u"?new Proxy(r,{get:(e,t)=>(typeof require<"u"?require:e)[t]}):r)(function(r){if(typeof require<"u")return require.apply(this,arguments);throw new Error('Dynamic require of "'+r+'" is not supported')});var Pge=(r,e)=>()=>(r&&(e=r(r=0)),e);var w=(r,e)=>()=>(e||r((e={exports:{}}).exports,e),e.exports),ut=(r,e)=>{for(var t in e)AS(r,t,{get:e[t],enumerable:!0})},Dge=(r,e,t,i)=>{if(e&&typeof e=="object"||typeof e=="function")for(let n of Sge(e))!xge.call(r,n)&&n!==t&&AS(r,n,{get:()=>e[n],enumerable:!(i=bge(e,n))||i.enumerable});return r};var Pe=(r,e,t)=>(t=r!=null?Qge(vge(r)):{},Dge(e||!r||!r.__esModule?AS(t,"default",{value:r,enumerable:!0}):t,r));var QK=w((GXe,BK)=>{BK.expo
+
+SyntaxError: Unexpected token {
+    at createScript (vm.js:80:10)
+    at Object.runInThisContext (vm.js:139:10)
+    at Module._compile (module.js:616:28)
+    at Object.Module._extensions..js (module.js:663:10)
+    at Module.load (module.js:565:32)
+    at tryModuleLoad (module.js:505:12)
+    at Function.Module._load (module.js:497:3)
+    at Function.Module.runMain (module.js:693:10)
+    at startup (bootstrap_node.js:188:16)
+    at bootstrap_node.js:609:3
+
+[I 2024-08-03 08:46:04.061 ServerApp] jupyter_lsp | extension was successfully linked.
+[I 2024-08-03 08:46:04.065 ServerApp] jupyter_server_terminals | extension was successfully linked.
+[I 2024-08-03 08:46:04.069 ServerApp] jupyterlab | extension was successfully linked.
+[I 2024-08-03 08:46:04.258 ServerApp] notebook_shim | extension was successfully linked.
+[I 2024-08-03 08:46:04.272 ServerApp] notebook_shim | extension was successfully loaded.
+[I 2024-08-03 08:46:04.274 ServerApp] jupyter_lsp | extension was successfully loaded.
+[I 2024-08-03 08:46:04.274 ServerApp] jupyter_server_terminals | extension was successfully loaded.
+[I 2024-08-03 08:46:04.275 LabApp] JupyterLab extension loaded from /home/yuanbing/anaconda3/envs/py310/lib/python3.10/site-packages/jupyterlab
+[I 2024-08-03 08:46:04.275 LabApp] JupyterLab application directory is /home/yuanbing/anaconda3/envs/py310/share/jupyter/lab
+[I 2024-08-03 08:46:04.276 LabApp] Extension Manager is 'pypi'.
+[I 2024-08-03 08:46:04.278 ServerApp] jupyterlab | extension was successfully loaded.
+[I 2024-08-03 08:46:04.278 ServerApp] The port 8888 is already in use, trying another port.
+[I 2024-08-03 08:46:04.278 ServerApp] The port 8889 is already in use, trying another port.
+[I 2024-08-03 08:46:04.279 ServerApp] Serving notebooks from local directory: /home/yuanbing/data/test/ymz_nis/Code-for-Finding-emergence-in-data-
+[I 2024-08-03 08:46:04.279 ServerApp] Jupyter Server 2.13.0 is running at:
+[I 2024-08-03 08:46:04.279 ServerApp] http://zjlab-3090:8890/lab?token=c4de6418b9780ae61155dc245679a0cb22995176f384c6ca
+[I 2024-08-03 08:46:04.279 ServerApp]     http://127.0.0.1:8890/lab?token=c4de6418b9780ae61155dc245679a0cb22995176f384c6ca
+[I 2024-08-03 08:46:04.279 ServerApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 2024-08-03 08:46:04.281 ServerApp] 
+    
+    To access the server, open this file in a browser:
+        file:///home/yuanbing/.local/share/jupyter/runtime/jpserver-15785-open.html
+    Or copy and paste one of these URLs:
+        http://zjlab-3090:8890/lab?token=c4de6418b9780ae61155dc245679a0cb22995176f384c6ca
+        http://127.0.0.1:8890/lab?token=c4de6418b9780ae61155dc245679a0cb22995176f384c6ca
+[I 2024-08-03 08:46:04.963 ServerApp] Skipped non-installed server(s): bash-language-server, dockerfile-language-server-nodejs, javascript-typescript-langserver, jedi-language-server, julia-language-server, pyright, python-language-server, python-lsp-server, r-languageserver, sql-language-server, texlab, typescript-language-server, unified-language-server, vscode-css-languageserver-bin, vscode-html-languageserver-bin, vscode-json-languageserver-bin, yaml-language-server
