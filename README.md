@@ -18,7 +18,7 @@ The framework is currently under investigation. <br>
 # Functions of folders
 ei: The function files used for calculating effective information and mutual information. <br>
 
-exp: The running code for the four experiments presented in the article. <br>
+exp: The running code for the four experiments presented in the article. (Currently, only the SIR experiment has been demonstrated. For further information regarding the remaining experiments' code, please contact the author, Mingzhe Yang, at ymp66393866@163.com.) <br>
 
 models_new.py: The core code modules of the neural network. <br>
 
