@@ -98,26 +98,10 @@ class train_nisp_rnis(train_nis):
         self.scale = None
         self.L = None
 
-
-    def reweight(self, batch_size):
+    def reweight(self):
         self.net.eval()
-        start = np.random.randint(self.samp_num - batch_size)
-        end = start + batch_size
-        net_temp = RNISNet(input_size = sz, latent_size = scale, output_size = 4, 
-                    hidden_units = hidden_units, is_normalized = True)
-        net_temp.load_state_dict(self.net.state_dict())
-        net_temp.to(device=device)
-
-        x_t, x_t1, w = self.x_t_all[start:end], self.x_t1_all[start:end], self.weights[start:end]
-        x_t1_enc = net_temp.encoding(x_t1)  
-        log_density, _ = kde_density(x_t1_enc)  # Probability Distribution of Encoded Data
-        log_rho = - self.scale * torch.log(2.0*torch.from_numpy(np.array(self.L)))  #Probability Distribution of Uniform Distribution
-        logp = log_rho - log_density  
-        weights = to_weights(logp, self.temperature) * self.samp_num
-        if use_cuda:
-            weights = weights.cuda(device=device)
-        weights=torch.where(weights<10,weights,10.)
-        cpt('w_3')
+        h_t_all = self.net.encoding(self.x_t_all)
+        self.weights = self.net.reweight(h_t_all)
 
 
     def train_step2(self, mae2_w, batch_size):
@@ -146,3 +130,6 @@ class train_nisp_rnis(train_nis):
                 self.train_loss /= 100
                 self.log(dei, term1, term2, epoch)
                 self.train_loss = 0
+            if epoch % 1000 == 0:
+                self.reweight()
+                print(self.weights[:10])
