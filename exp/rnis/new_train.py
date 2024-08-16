@@ -10,6 +10,8 @@ from torch import nn
 from torch import distributions
 from torch.nn.parameter import Parameter
 from new_ei import EI
+from new_ei import to_weights
+from new_ei import kde_density
 from datetime import datetime
 t0 = datetime.now()
 
@@ -84,3 +86,50 @@ class train_nis():
                 self.train_loss /= 100
                 self.log(dei, term1, term2, epoch)
                 self.train_loss = 0
+
+    def return_log(self):
+        return self.eis, self.term1s, self.term2s, self.train_losses, self.test_losses
+
+class train_nisp_rnis(train_nis):
+    def __init__(self, net, data, data_test, device):
+        super().__init__(net, data, data_test, device)
+
+        self.temperature = None
+        self.scale = None
+        self.L = None
+
+    def reweight(self):
+        self.net.eval()
+        h_t_all = self.net.encoding(self.x_t_all)
+        self.weights = self.net.reweight(h_t_all)
+
+
+    def train_step2(self, mae2_w, batch_size):
+        self.net.train()
+        start = np.random.randint(self.samp_num - batch_size)
+        end = start + batch_size
+        x_t, x_t1, w = self.x_t_all[start:end], self.x_t1_all[start:end], self.weights[start:end]
+        x_t1_hat, ei_items = self.net(x_t, x_t1)
+        h_t_hat = self.net.back_forward(x_t1)
+        mae1 = (self.MAE_raw(x_t1, x_t1_hat).mean(axis=1) * w).mean() 
+        mae2 = (self.MAE_raw(h_t_hat, ei_items['h_t']).mean(axis=1) * w).mean() 
+        loss = mae1 + mae2_w*mae2
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        return loss
+
+    def training(self, T1, T_all, mae2_w, batch_size):
+        for epoch in range(T_all):
+            if epoch < T1:
+                self.train_loss += self.train_step(batch_size)
+            else:
+                self.train_loss += self.train_step2(mae2_w, batch_size)
+            if epoch % 100 == 0:
+                self.test_loss, dei, term1, term2 = self.test_step()
+                self.train_loss /= 100
+                self.log(dei, term1, term2, epoch)
+                self.train_loss = 0
+            if epoch % 1000 == 0:
+                self.reweight()
+                print(self.weights[:10])
