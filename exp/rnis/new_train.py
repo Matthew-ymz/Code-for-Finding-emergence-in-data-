@@ -98,10 +98,31 @@ class train_nisp_rnis(train_nis):
         self.scale = None
         self.L = None
 
+    def update_weight(self, h_t, L=1):
+        h_t = h_t.cpu()
+        bandwidth = 0.05
+        temperature = 1
+        samples = h_t.size(0)
+        scale = h_t.size(1)
+        n = h_t.shape[0]
+        log_density = torch.zeros(n, dtype=h_t.dtype, layout=h_t.layout, device=h_t.device)
+
+        for i in range(n):
+            kernels = torch.exp(-0.5 * ((h_t - h_t[i]) / bandwidth) ** 2) / (bandwidth * np.sqrt(2 * np.pi))
+            density = torch.sum(kernels) / n
+            log_density[i] = torch.log(density)
+
+        log_rho = - scale * np.log(2.0 * L) 
+        logp = log_rho - log_density
+        soft = nn.Softmax(dim=0)
+        weights = soft(logp / temperature)
+        weights = weights * samples
+        self.weights = weights.cuda()
+
     def reweight(self):
         self.net.eval()
         h_t_all = self.net.encoding(self.x_t_all)
-        self.weights = self.net.reweight(h_t_all)
+        self.update_weight(h_t_all)
 
 
     def train_step2(self, mae2_w, batch_size):

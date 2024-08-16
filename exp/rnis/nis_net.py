@@ -255,27 +255,6 @@ class NISPNet(NISNet):
         h_t_hat = self.inv_dynamics(h_t1) + h_t1
         return h_t_hat
 
-    def reweight(self, h_t, L=1):
-        bandwidth = 0.05
-        temperature = 1
-        samples = h_t.size(0)
-        scale = h_t.size(1)
-        n = h_t.shape[0]
-        log_density = torch.zeros(n, dtype=h_t.dtype, layout=h_t.layout, device=h_t.device)
-
-        for i in range(n):
-            kernels = torch.exp(-0.5 * ((h_t - h_t[i]) / bandwidth) ** 2) / (bandwidth * np.sqrt(2 * np.pi))
-            density = torch.sum(kernels) / n
-            log_density[i] = torch.log(density)
-
-        log_rho = - scale * np.log(2.0 * L)
-        logp = log_rho - log_density
-        soft = nn.Softmax(dim=0)
-        weights = soft(logp / temperature)
-        weights = weights * samples
-        return weights
-
-
 class RNISNet(NISNet):
     def __init__(self, 
                  input_size: int = 4, 
@@ -394,25 +373,3 @@ class RNISNet(NISNet):
         h_t1 = self.encoding(x_t1)
         h_t_hat, _ = self.dynamics.g(h_t1)
         return h_t_hat
-
-    def reweight(self, h_t, L=1):
-        h_t = h_t.cpu()
-        bandwidth = 0.05
-        temperature = 1
-        samples = h_t.size(0)
-        scale = h_t.size(1)
-        n = h_t.shape[0]
-        log_density = torch.zeros(n, dtype=h_t.dtype, layout=h_t.layout, device=h_t.device)
-
-        for i in range(n):
-            kernels = torch.exp(-0.5 * ((h_t - h_t[i]) / bandwidth) ** 2) / (bandwidth * np.sqrt(2 * np.pi))
-            density = torch.sum(kernels) / n
-            log_density[i] = torch.log(density)
-
-        log_rho = - scale * np.log(2.0 * L)
-        logp = log_rho - log_density
-        soft = nn.Softmax(dim=0)
-        weights = soft(logp / temperature)
-        weights = weights * samples
-        weights = weights.cuda()
-        return weights
