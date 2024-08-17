@@ -8,7 +8,7 @@ from sklearn.neighbors import KernelDensity
 def kde_density(X):
     kde = KernelDensity(kernel='gaussian', bandwidth=0.05, atol=0.2).fit(X.cpu().data.numpy()) #bindwidth=0.02
     log_density = kde.score_samples(X.cpu().data.numpy())
-    return log_density, kde
+    return log_density
 
 
 def to_weights(log_w, temperature=1): 

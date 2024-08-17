@@ -78,12 +78,12 @@ class train_nis():
         self.train_losses.append(self.train_loss.item())
         self.test_losses.append(self.test_loss.item())
        
-    def training(self, T_all, batch_size):
+    def training(self, T_all, batch_size, clip=200):
         for epoch in range(T_all):
             self.train_loss += self.train_step(batch_size)
-            if epoch%100 == 0:
+            if epoch % clip == 0:
                 self.test_loss, dei, term1, term2 = self.test_step()
-                self.train_loss /= 100
+                self.train_loss /= clip
                 self.log(dei, term1, term2, epoch)
                 self.train_loss = 0
 
@@ -99,23 +99,14 @@ class train_nisp_rnis(train_nis):
         self.L = None
 
     def update_weight(self, h_t, L=1):
-        h_t = h_t.cpu()
-        bandwidth = 0.05
-        temperature = 1
         samples = h_t.size(0)
         scale = h_t.size(1)
         n = h_t.shape[0]
-        log_density = torch.zeros(n, dtype=h_t.dtype, layout=h_t.layout, device=h_t.device)
-
-        for i in range(n):
-            kernels = torch.exp(-0.5 * ((h_t - h_t[i]) / bandwidth) ** 2) / (bandwidth * np.sqrt(2 * np.pi))
-            density = torch.sum(kernels) / n
-            log_density[i] = torch.log(density)
-
+        log_density = kde_density(h_t)
         log_rho = - scale * np.log(2.0 * L) 
         logp = log_rho - log_density
         soft = nn.Softmax(dim=0)
-        weights = soft(logp / temperature)
+        weights = soft(torch.tensor(logp))
         weights = weights * samples
         self.weights = weights.cuda()
 
@@ -134,23 +125,23 @@ class train_nisp_rnis(train_nis):
         h_t_hat = self.net.back_forward(x_t1)
         mae1 = (self.MAE_raw(x_t1, x_t1_hat).mean(axis=1) * w).mean() 
         mae2 = (self.MAE_raw(h_t_hat, ei_items['h_t']).mean(axis=1) * w).mean() 
-        loss = mae1 + mae2_w*mae2
+        loss = mae1 + mae2_w * mae2
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
         return loss
 
-    def training(self, T1, T_all, mae2_w, batch_size):
+    def training(self, T1, T_all, mae2_w, batch_size, clip=200):
         for epoch in range(T_all):
             if epoch < T1:
                 self.train_loss += self.train_step(batch_size)
             else:
                 self.train_loss += self.train_step2(mae2_w, batch_size)
-            if epoch % 100 == 0:
+            if epoch % clip == 0:
                 self.test_loss, dei, term1, term2 = self.test_step()
-                self.train_loss /= 100
+                self.train_loss /= clip
                 self.log(dei, term1, term2, epoch)
                 self.train_loss = 0
-            if epoch % 1000 == 0:
+            if epoch > T1 and epoch % 1000 == 0:
                 self.reweight()
                 print(self.weights[:10])
