@@ -63,20 +63,21 @@ class train_nis():
         return loss, dei, term1, term2
 
     def log(self, dei, term1, term2, epoch):
-        cpt('step')
-        print('Epoch:', epoch)
-        print('Train loss: %.4f' %  self.train_loss.item())
-        print('Train loss: %.4f' %  self.test_loss.item())
-        print('dEI: %.4f' % dei.item())
-        print('term1: %.4f'% term1.item())
-        print('term2: %.4f'% term2.item())
-        print(120*'-')
-        
-        self.eis.append(dei.item())
-        self.term1s.append(term1.item())
-        self.term2s.append(term2.item())
-        self.train_losses.append(self.train_loss.item())
-        self.test_losses.append(self.test_loss.item())
+        if dei > 0:
+            cpt('step')
+            print('Epoch:', epoch)
+            print('Train loss: %.4f' %  self.train_loss.item())
+            print('Train loss: %.4f' %  self.test_loss.item())
+            print('dEI: %.4f' % dei.item())
+            print('term1: %.4f'% term1.item())
+            print('term2: %.4f'% term2.item())
+            print(120*'-')
+
+            self.eis.append(dei.item())
+            self.term1s.append(term1.item())
+            self.term2s.append(term2.item())
+            self.train_losses.append(self.train_loss.item())
+            self.test_losses.append(self.test_loss.item())
        
     def training(self, T_all, batch_size, clip=200):
         for epoch in range(T_all):
