@@ -18,8 +18,8 @@ from scipy.stats import multivariate_normal
 
 
 
-class KuromotoModel(Dataset):
-    def __init__(self, size_list, steps, dt, interval, rho, sz, groups, coupling, use_cache=True):
+class KuramotoModel(Dataset):
+    def __init__(self, steps, dt, sz, groups, coupling, use_cache=True):
         """
         TODO
         
@@ -30,16 +30,9 @@ class KuromotoModel(Dataset):
         :param sigma: Standard deviation of noise.
         :param rho: Correlation coefficient of noise.
         """
-        self.size_list = size_list
-        self.rho = rho
         self.steps = steps
         self.dt = dt
-        self.interval = interval
         self.coupling = coupling
-        self.init_total_number = np.sum(size_list)
-
-        #self.data = self.simulate_multiseries(size_list)
-        self.prior = multivariate_normal(mean=np.zeros(2), cov=np.array([[1, rho], [rho, 1]]))
         self.sz = sz
         self.groups = groups
         self.obj_matrix = np.zeros([sz,sz])
@@ -56,29 +49,30 @@ class KuromotoModel(Dataset):
 
 
     def one_step(self, thetas, dt=0.01):
-        # ii = np.expand_dims(thetas, 1).repeat(self.sz, 1)
-        # # jj = ii.transpose(0, 1)
-        # jj = ii.T
-        # print(ii, jj)
-        # dff = jj - ii
-        # sindiff = np.sin(dff)
-        # mult = self.coupling * self.obj_matrix @ sindiff
-        # dia =  np.diagonal(mult)
-        # noise = np.random.rand(self.sz) * 0 #10
-        # thetas = self.dt * (self.omegas + dia + noise) + thetas
-        # # print(thetas.shape, (self.omegas + dia + noise).shape)
-        # return thetas
-
-        thetas = torch.tensor(thetas)
-        ii = thetas.unsqueeze(0).repeat(thetas.size()[0], 1)
-        jj = ii.transpose(0, 1)
+        #ii = np.expand_dims(thetas, 1).repeat(self.sz, 1)
+        ii = np.repeat(thetas[:, np.newaxis], thetas.size, axis=1)
+        # jj = ii.transpose(0, 1)
+        jj = ii.T
+        #print(ii, jj)
         dff = jj - ii
-        sindiff = torch.sin(dff)
-        mult = self.coupling * torch.tensor(self.obj_matrix) @ sindiff
-        dia =  torch.diagonal(mult)
-        noise = torch.randn(self.sz) * 0#10
-        thetas = 0.01 * (torch.tensor(self.omegas) + dia + noise) + thetas
-        return np.array(thetas)
+        sindiff = np.sin(dff)
+        mult = self.coupling * self.obj_matrix @ sindiff
+        dia =  np.diagonal(mult)
+        noise = np.random.rand(self.sz) * 0 #10
+        thetas = self.dt * (self.omegas + dia + noise) + thetas
+        # print(thetas.shape, (self.omegas + dia + noise).shape)
+        return thetas
+
+#         thetas = torch.tensor(thetas)
+#         ii = thetas.unsqueeze(0).repeat(thetas.size()[0], 1)
+#         jj = ii.transpose(0, 1)
+#         dff = jj - ii
+#         sindiff = torch.sin(dff)
+#         mult = self.coupling * torch.tensor(self.obj_matrix) @ sindiff
+#         dia =  torch.diagonal(mult)
+#         noise = torch.randn(self.sz) * 0#10
+#         thetas = 0.01 * (torch.tensor(self.omegas) + dia + noise) + thetas
+#         return np.array(thetas)
 
 
     def simulate_oneserie(self, batch_size=1, sample_step=5):
