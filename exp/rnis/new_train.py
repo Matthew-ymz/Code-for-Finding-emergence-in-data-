@@ -67,7 +67,7 @@ class train_nis():
             cpt('step')
             print('Epoch:', epoch)
             print('Train loss: %.4f' %  self.train_loss.item())
-            print('Train loss: %.4f' %  self.test_loss.item())
+            print('Test loss: %.4f' %  self.test_loss.item())
             print('dEI: %.4f' % dei.item())
             print('term1: %.4f'% term1.item())
             print('term2: %.4f'% term2.item())

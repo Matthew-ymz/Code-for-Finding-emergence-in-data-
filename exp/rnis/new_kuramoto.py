@@ -19,7 +19,7 @@ from scipy.stats import multivariate_normal
 
 
 class KuramotoModel(Dataset):
-    def __init__(self, steps, dt, sz, groups, coupling, use_cache=True):
+    def __init__(self, steps, dt, sz, groups, coupling, sample_step=5):
         """
         TODO
         
@@ -45,34 +45,34 @@ class KuramotoModel(Dataset):
                     self.group_matrix[j + k * sz // groups, k] = 1
         self.obj_matrix = self.obj_matrix - np.eye(sz) * self.obj_matrix
         self.omegas = np.random.randn(sz)
-        self.input, self.output, _, _ = self.simulate_oneserie()
+        self.input, self.output, _, _ = self.simulate_oneserie(sample_step=5)
 
 
-    def one_step(self, thetas, dt=0.01):
-        #ii = np.expand_dims(thetas, 1).repeat(self.sz, 1)
-        ii = np.repeat(thetas[:, np.newaxis], thetas.size, axis=1)
-        # jj = ii.transpose(0, 1)
-        jj = ii.T
-        #print(ii, jj)
-        dff = jj - ii
-        sindiff = np.sin(dff)
-        mult = self.coupling * self.obj_matrix @ sindiff
-        dia =  np.diagonal(mult)
-        noise = np.random.rand(self.sz) * 0 #10
-        thetas = self.dt * (self.omegas + dia + noise) + thetas
-        # print(thetas.shape, (self.omegas + dia + noise).shape)
-        return thetas
-
-#         thetas = torch.tensor(thetas)
-#         ii = thetas.unsqueeze(0).repeat(thetas.size()[0], 1)
-#         jj = ii.transpose(0, 1)
+    def one_step(self, thetas):
+#         #ii = np.expand_dims(thetas, 1).repeat(self.sz, 1)
+#         ii = np.repeat(thetas[:, np.newaxis], thetas.size, axis=1)
+#         # jj = ii.transpose(0, 1)
+#         jj = ii.T
+#         #print(ii, jj)
 #         dff = jj - ii
-#         sindiff = torch.sin(dff)
-#         mult = self.coupling * torch.tensor(self.obj_matrix) @ sindiff
-#         dia =  torch.diagonal(mult)
-#         noise = torch.randn(self.sz) * 0#10
-#         thetas = 0.01 * (torch.tensor(self.omegas) + dia + noise) + thetas
-#         return np.array(thetas)
+#         sindiff = np.sin(dff)
+#         mult = self.coupling * self.obj_matrix @ sindiff
+#         dia =  np.diagonal(mult)
+#         noise = np.random.rand(self.sz) * 0 #10
+#         thetas = self.dt * (self.omegas + dia + noise) + thetas
+#         # print(thetas.shape, (self.omegas + dia + noise).shape)
+#         return thetas
+
+        thetas = torch.tensor(thetas)
+        ii = thetas.unsqueeze(0).repeat(thetas.size()[0], 1)
+        jj = ii.transpose(0, 1)
+        dff = jj - ii
+        sindiff = torch.sin(dff)
+        mult = self.coupling * torch.tensor(self.obj_matrix) @ sindiff
+        dia =  torch.diagonal(mult)
+        noise = torch.randn(self.sz) * 0.01
+        thetas = self.dt * (torch.tensor(self.omegas) + dia + noise) + thetas
+        return np.array(thetas)
 
 
     def simulate_oneserie(self, batch_size=1, sample_step=5):
@@ -87,7 +87,7 @@ class KuramotoModel(Dataset):
         for i in range(batch_size):
             thetas = np.random.rand(self.sz) * 2 * np.pi
             for t in range(time_steps):
-                thetas = self.one_step(thetas, self.obj_matrix)
+                thetas = self.one_step(thetas)
                 if t % sample_step == 0:
                     states[i, :, t // sample_step] = thetas
                     cos_ccs = (np.cos(thetas) @ self.group_matrix) * self.groups / self.sz
@@ -104,50 +104,18 @@ class KuramotoModel(Dataset):
                     latent.reshape(self.groups, -1).T, latent_next.reshape(self.groups, -1).T
 
     def _simulate_multiseries(self):
-        """
-        Simulate multiple time series from various starting points to create the main dataset.
         
-        :return: sir_input and sir_output arrays.
-        """
-        num_obs = int(self.steps / self.interval)
-        sir_data_all = np.zeros([self.init_total_number, num_obs, 4])
-        num_strip = len(self.size_list)
-        frac = 1 / num_strip
-        
-        for strip in range(num_strip):
-            sir_data_part = np.zeros([self.size_list[strip], num_obs, 4])
-            boundary_left = strip * frac
-            boundary_right = boundary_left + frac
-            S_init = np.random.uniform(boundary_left, boundary_right, self.size_list[strip])
-            I_init = []
-            while len(I_init) < self.size_list[strip]:
-                I = np.random.rand(1)[0]
-                S = S_init[len(I_init)]
-                if S + I <= 1:
-                    sir_data_part[len(I_init),:,:] = self.simulate_oneserie(S, I)
-                    I_init.append(I)
-            size_list_cum = np.cumsum(self.size_list)
-            size_list_cum = np.concatenate([[0], size_list_cum])
-            sir_data_all[size_list_cum[strip]:size_list_cum[strip+1], :, :] = sir_data_part
-        sir_input, sir_output = self.reshape(sir_data_all = sir_data_all)
-        return sir_input, sir_output
+        pass
 
     def reshape(self, sir_data_all):
-        """
-        Reshape the generated multi-time series into input and output arrays.
         
-        :param sir_data_all: Array of all time series data.
-        :return: sir_input and sir_output arrays.
-        """
-        sir_input = sir_data_all[:, :-1, :].reshape(-1, self.sz)
-        sir_output = sir_data_all[:, 1:, :].reshape(-1, self.sz)
-        return sir_input, sir_output
+        pass
 
     def __len__(self):
         """
         Return the length of the dataset.
         """
-        return len(self.sir_input)
+        return len(self.input)
 
     def __getitem__(self, idx):
         """
@@ -156,4 +124,4 @@ class KuramotoModel(Dataset):
         :param idx: Index of the item.
         :return: A tuple of torch.Tensor representing the input and output.
         """
-        return torch.tensor(self.sir_input[idx], dtype=torch.float), torch.tensor(self.sir_output[idx], dtype=torch.float)
+        return torch.tensor(self.input[idx], dtype=torch.float), torch.tensor(self.output[idx], dtype=torch.float)
