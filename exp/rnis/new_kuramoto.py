@@ -48,34 +48,20 @@ class KuramotoModel(Dataset):
         self.input, self.output, _, _ = self.simulate_oneserie(sample_step=5)
 
 
-    def one_step(self, thetas):
-#         #ii = np.expand_dims(thetas, 1).repeat(self.sz, 1)
-#         ii = np.repeat(thetas[:, np.newaxis], thetas.size, axis=1)
-#         # jj = ii.transpose(0, 1)
-#         jj = ii.T
-#         #print(ii, jj)
-#         dff = jj - ii
-#         sindiff = np.sin(dff)
-#         mult = self.coupling * self.obj_matrix @ sindiff
-#         dia =  np.diagonal(mult)
-#         noise = np.random.rand(self.sz) * 0 #10
-#         thetas = self.dt * (self.omegas + dia + noise) + thetas
-#         # print(thetas.shape, (self.omegas + dia + noise).shape)
-#         return thetas
-
-        thetas = torch.tensor(thetas)
-        ii = thetas.unsqueeze(0).repeat(thetas.size()[0], 1)
-        jj = ii.transpose(0, 1)
+    def one_step(self, thetas, noise_p=0):
+        thetas_unsqueezed = thetas[np.newaxis, :]
+        ii = np.tile(thetas_unsqueezed, (len(thetas), 1))
+        jj = ii.T
         dff = jj - ii
-        sindiff = torch.sin(dff)
-        mult = self.coupling * torch.tensor(self.obj_matrix) @ sindiff
-        dia =  torch.diagonal(mult)
-        noise = torch.randn(self.sz) * 0.01
-        thetas = self.dt * (torch.tensor(self.omegas) + dia + noise) + thetas
-        return np.array(thetas)
+        sindiff = np.sin(dff)
+        mult = self.coupling * self.obj_matrix @ sindiff
+        dia =  np.diagonal(mult)
+        noise = np.random.rand(self.sz) * noise_p
+        thetas = self.dt * (self.omegas + dia + noise) + thetas
+        return thetas
 
 
-    def simulate_oneserie(self, batch_size=1, sample_step=5):
+    def simulate_oneserie(self, batch_size=1, sample_step=5, noise_p=0):
         """
         TODO
         """
@@ -83,25 +69,26 @@ class KuramotoModel(Dataset):
         time_steps = self.steps * sample_step
 
         states = np.zeros([batch_size, self.sz, time_steps // sample_step])
-        centers = np.zeros([batch_size, self.groups, time_steps // sample_step])
+        centers = np.zeros([batch_size, 2*self.groups, time_steps // sample_step])
         for i in range(batch_size):
             thetas = np.random.rand(self.sz) * 2 * np.pi
             for t in range(time_steps):
-                thetas = self.one_step(thetas)
+                thetas = self.one_step(thetas, noise_p)
                 if t % sample_step == 0:
                     states[i, :, t // sample_step] = thetas
                     cos_ccs = (np.cos(thetas) @ self.group_matrix) * self.groups / self.sz
                     sin_ccs = (np.sin(thetas) @ self.group_matrix) * self.groups / self.sz
-                    #rr = np.sqrt(cos_ccs ** 2 + sin_ccs ** 2)
-                    #phi = np.arcsin(sin_ccs / rr)
-                    #centers[i, : groups, t // sample_step] = cos_ccs
-                    centers[i, :, t // sample_step] = sin_ccs
-        state = np.sin(states[:, :, :-1])
-        state_next = np.sin(states[:, :, 1:])
+                    centers[i, :, t // sample_step] = np.concatenate((sin_ccs, cos_ccs), axis=0) 
+        state_s = np.sin(states[:, :, :-1])
+        state_next_s = np.sin(states[:, :, 1:])
+        state_c = np.cos(states[:, :, :-1])
+        state_next_c = np.cos(states[:, :, 1:])
+        state = np.concatenate((state_s, state_c), axis=1)
+        state_next = np.concatenate((state_next_s, state_next_c), axis=1)
         latent = centers[:, :, :-1]
         latent_next = centers[:, :, 1:]
-        return state.reshape(self.sz, -1).T, state_next.reshape(self.sz, -1).T, \
-                    latent.reshape(self.groups, -1).T, latent_next.reshape(self.groups, -1).T
+        return state.reshape(2*self.sz, -1).T, state_next.reshape(2*self.sz, -1).T, \
+                    latent.reshape(2*self.groups, -1).T, latent_next.reshape(2*self.groups, -1).T
 
     def _simulate_multiseries(self):
         
