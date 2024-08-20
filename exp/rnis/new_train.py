@@ -92,12 +92,13 @@ class train_nis():
         return self.eis, self.term1s, self.term2s, self.train_losses, self.test_losses
 
 class train_nisp_rnis(train_nis):
-    def __init__(self, net, data, data_test, device):
+    def __init__(self, net, data, data_test, device, is_reweight):
         super().__init__(net, data, data_test, device)
 
         self.temperature = None
         self.scale = None
         self.L = None
+        self.is_reweight = is_reweight
 
     def update_weight(self, h_t, L=1):
         samples = h_t.size(0)
@@ -143,6 +144,6 @@ class train_nisp_rnis(train_nis):
                 self.train_loss /= clip
                 self.log(dei, term1, term2, epoch)
                 self.train_loss = 0
-            if epoch > T1 and epoch % 1000 == 0:
+            if epoch > T1 and epoch % 1000 == 0 and self.is_reweight:
                 self.reweight()
                 print(self.weights[:10])
