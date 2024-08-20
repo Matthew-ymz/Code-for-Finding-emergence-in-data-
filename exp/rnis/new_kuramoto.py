@@ -19,7 +19,7 @@ from scipy.stats import multivariate_normal
 
 
 class KuramotoModel(Dataset):
-    def __init__(self, steps, dt, sz, groups, coupling, sample_step=5):
+    def __init__(self, steps, dt, sz, groups, coupling, sample_step=5, noise_p=0):
         """
         TODO
         
@@ -45,7 +45,7 @@ class KuramotoModel(Dataset):
                     self.group_matrix[j + k * sz // groups, k] = 1
         self.obj_matrix = self.obj_matrix - np.eye(sz) * self.obj_matrix
         self.omegas = np.random.randn(sz)
-        self.input, self.output, _, _ = self.simulate_oneserie(sample_step=5)
+        self.input, self.output, _, _ = self.simulate_oneserie(sample_step=sample_step, noise_p=noise_p)
 
 
     def one_step(self, thetas, noise_p=0):
