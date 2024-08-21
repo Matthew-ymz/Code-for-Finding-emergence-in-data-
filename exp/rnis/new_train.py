@@ -92,7 +92,7 @@ class train_nis():
         return self.eis, self.term1s, self.term2s, self.train_losses, self.test_losses
 
 class train_nisp_rnis(train_nis):
-    def __init__(self, net, data, data_test, device, is_reweight):
+    def __init__(self, net, data, data_test, device, is_reweight=True):
         super().__init__(net, data, data_test, device)
 
         self.temperature = None
