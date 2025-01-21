@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from tqdm import tqdm
 import torch.nn.init as init
 from torch import distributions
 from torch.nn.parameter import Parameter
@@ -30,49 +31,16 @@ def cpt(s):
     print(f'check point{s:->10}-> {t.time()}; lasting {t - t0} seconds')
     t0 = t
 
-def truncated_kaiming_normal_(tensor, mean=0.0, std=0.1, a=3.0, b=3.0):
-    """
-    对参数张量进行截断的Kaiming正态分布初始化。
-    
-    参数:
-    - tensor: 要初始化的参数张量。
-    - mean: 分布的均值。
-    - std: 分布的标准差。
-    - a: 截断下限，相对于均值的倍数。
-    - b: 截断上限，相对于均值的倍数。
-    """
-    # Kaiming正态分布初始化
-    init.kaiming_normal_(tensor, mode='fan_out', nonlinearity='relu')
-    
-    # 截断区间
-    lower, upper = mean - a * std, mean + b * std
-    
-    # 重新采样直到所有值都落在截断区间内
-    while torch.any(tensor < lower) or torch.any(tensor > upper):
-        init.kaiming_normal_(tensor, mode='fan_out', nonlinearity='relu')
-
-
-def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_interval = 1000, temperature=1, m_step = 10, test_start = 0, test_end = 0.3, sigma=0.03, rou=-0.5, dt=0.01, L=1, hidden_units = 64, batch_size = 700, framework = 'nis'):
+def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_interval = 1000, temperature=1, m_step = 10, test_start = 0, test_end = 0.3, sigma=0.03, rou=-0.5, dt=0.01, L=1, hidden_units = 64, batch_size = 700, framework = 'nis', test_mulstep=False):
     MAE = torch.nn.L1Loss()
     MAE_raw = torch.nn.L1Loss(reduction='none')
     ss,sps,ls,lps = train_data
     sample_num = ss.size()[0] 
     weights = torch.ones(sample_num, device=device) 
     net = Renorm_Dynamic(sym_size = sz, latent_size = scale, effect_size = sz, 
-                         hidden_units = hidden_units, normalized_state=False, device = device)
+                         hidden_units = hidden_units, normalized_state=True, device = device)
     if scale == 2:
         net.load_state_dict(torch.load('mdl_data/netwn_init_trnorm0.1+zero_seed=4.mdl').state_dict())
-    # 使用自定义的截断正态分布初始化函数
-    # for m in net.modules():
-    #     if isinstance(m, nn.Linear):
-    #         # Kaiming均匀分布初始化权重
-    #         # mode='fan_out' 表示考虑权重矩阵的输出维度
-    #         # nonlinearity='relu' 指定激活函数为ReLU
-    #         init.kaiming_uniform_(m.weight, mode='fan_out', nonlinearity='relu')
-            
-    #         # 偏置初始化为0
-    #         if m.bias is not None:
-    #             init.constant_(m.bias, 0)
     
     net.to(device=device)
     optimizer = torch.optim.Adam([p for p in net.parameters() if p.requires_grad==True], lr=1e-4)    
@@ -84,7 +52,7 @@ def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_inter
     MAEs_mstep =[]
 
 
-    for epoch in range(T1):
+    for epoch in tqdm(range(T1)):
         start = np.random.randint(ss.size()[0]-batch_size)
         end = start+batch_size
         s,sp,l,lp, w = ss[start:end], sps[start:end], ls[start:end], lps[start:end], weights[start:end]
@@ -96,23 +64,19 @@ def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_inter
 
         if framework == 'nis+':
             if epoch > 0 and epoch % encoder_interval == 0:
-                cpt('w_0')
                 # preparing training data
                 net_temp = Renorm_Dynamic(sym_size = sz, latent_size = scale, effect_size = sz, 
-                             hidden_units = hidden_units, normalized_state=False, device = device)
+                             hidden_units = hidden_units, normalized_state=True, device = device)
                 net_temp.load_state_dict(net.state_dict())
                 net_temp.to(device=device)
                 encodings = net_temp.encoding(ss)  
-                cpt('w_1')
                 log_density, k_model_n = kde_density(encodings)  # Probability Distribution of Encoded Data
-                cpt('w_2')
                 log_rho = - scale * torch.log(2.0*torch.from_numpy(np.array(L)))  #Probability Distribution of Uniform Distribution
                 logp = log_rho - log_density  
                 weights = to_weights(logp, temperature) * sample_num
                 if use_cuda:
                     weights = weights.cuda(device=device)
                 weights=torch.where(weights<10,weights,10.)
-                cpt('w_3')
             
             for p in net.flow.parameters():
                 p.requires_grad = False
@@ -129,30 +93,23 @@ def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_inter
 
         
         if epoch % 500 == 0:
-            cpt('o_0')
-            print('Epoch:', epoch)
-            mae_mstep = 0
-            for s in np.linspace(test_start,test_end,20):
-                s=float(s)
-                i=(1-s)/2 #sir
-                mae_mstep += calculate_multistep_predict(net,s,i,steps=m_step, sigma=sigma, rou=rou, dt=dt)
-            mae_mstep /= 20
+            if test_mulstep:
+                mae_mstep = 0
+                for s in np.linspace(test_start,test_end,20):
+                    s=float(s)
+                    i=(1-s)/2 #sir
+                    mae_mstep += calculate_multistep_predict(net,s,i,steps=m_step, sigma=sigma, rou=rou, dt=dt)
+                mae_mstep /= 20
+                MAEs_mstep.append(mae_mstep) 
+                
             ei1, sigmas1,weightsnn = test_model_causal_multi_sis(test_data,MAE_raw,net,sigma,scale, L=L,num_samples = 1000)
-            print('Train loss: %.4f' %  loss.item())
-            print('dEI: %.4f' % ei1[0])
-            print('term1: %.4f'% ei1[3])
-            print('term2: %.4f'% ei1[4])
-            print('Test multistep loss: %.4f'% mae_mstep)
-            print(120*'-')
-  
             eis.append(ei1[0])
             term1s.append(ei1[3].item())
             term2s.append(ei1[4].item())
             losses.append(loss.item())
-            MAEs_mstep.append(mae_mstep) 
-            cpt('o_1')
+            
 
-    for epoch in range(T1,T2):
+    for epoch in tqdm(range(T1,T2)):
         if framework == 'nis':
             start = np.random.randint(ss.size()[0]-batch_size)
             end = start+batch_size
@@ -178,47 +135,35 @@ def train(train_data, test_data, sz, scale, mae2_w, T2, T1 = 3001, encoder_inter
 
         
             if epoch > 0 and epoch % encoder_interval == 0:
-                cpt('w_0')
                 # preparing training data
                 net_temp = Renorm_Dynamic(sym_size = sz, latent_size = scale, effect_size = sz, 
-                             hidden_units = hidden_units, normalized_state=False, device = device)
+                             hidden_units = hidden_units, normalized_state=True, device = device)
                 net_temp.load_state_dict(net.state_dict())
                 net_temp.to(device=device)
                 encodings = net_temp.encoding(ss)  
-                cpt('w_1')
                 log_density, k_model_n = kde_density(encodings)  # Probability Distribution of Encoded Data
-                cpt('w_2')
                 log_rho = - scale * torch.log(2.0*torch.from_numpy(np.array(L)))  #Probability Distribution of Uniform Distribution
                 logp = log_rho - log_density  
                 weights = to_weights(logp, temperature) * sample_num
                 if use_cuda:
                     weights = weights.cuda(device=device)
                 weights=torch.where(weights<10,weights,10.)
-                cpt('w_3')
             
         if epoch % 500 == 0:
-            cpt('o_0')
-            print('Epoch:', epoch)
-            mae_mstep = 0
-            for s in np.linspace(test_start,test_end,20):
-                s=float(s)
-                i=(1-s)/2 #sir
-                mae_mstep += calculate_multistep_predict(net,s,i,steps=m_step,sigma=sigma, rou=rou, dt=dt)
-            mae_mstep /= 20
+            if test_mulstep:
+                mae_mstep = 0
+                for s in np.linspace(test_start,test_end,20):
+                    s=float(s)
+                    i=(1-s)/2 #sir
+                    mae_mstep += calculate_multistep_predict(net,s,i,steps=m_step, sigma=sigma, rou=rou, dt=dt)
+                mae_mstep /= 20
+                MAEs_mstep.append(mae_mstep) 
             ei1, sigmas1,weightsnn = test_model_causal_multi_sis(test_data,MAE_raw,net,sigma,scale, L=L,num_samples = 1000)
-            print('Train loss: %.4f' %  loss.item())
-            print('dEI: %.4f' % ei1[0])
-            print('term1: %.4f'% ei1[3])
-            print('term2: %.4f'% ei1[4])
-            print('Test multistep loss: %.4f'% mae_mstep)
-            print(120*'-')
-  
             eis.append(ei1[0])
             term1s.append(ei1[3].item())
             term2s.append(ei1[4].item())
             losses.append(loss.item())
-            MAEs_mstep.append(mae_mstep) 
-            cpt('o_1')
+            
             
     return eis, term1s, term2s, losses, MAEs_mstep, net
 
