@@ -91,7 +91,7 @@ def approx_ei(input_size, output_size, sigmas_matrix, func, num_samples = 1000, 
     
     if dets==0:
         term2 = - term1
-    EI = max(term1 + term2, 0)
+    EI = term1 +term2
     if torch.is_tensor(EI):
         EI = EI.item()
     eff = EI / (input_size * np.log(2 * L))
